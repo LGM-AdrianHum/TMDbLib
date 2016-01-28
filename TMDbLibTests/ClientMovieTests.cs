@@ -84,7 +84,7 @@ namespace TMDbLibTests
             _config.Client.SetSessionInformation(_config.UserSessionId, SessionType.UserSession);
 
             // Account states will only show up if we've done something
-            _config.Client.MovieSetRating(IdHelper.TheDarkKnightRises, 5);
+            _config.Client.MovieSetRating(IdHelper.TheDarkKnightRises, 5).Wait();
 
             MovieMethods combinedEnum = tmpMethods.Keys.Aggregate((methods, movieMethods) => methods | movieMethods);
             Movie item = _config.Client.GetMovie(IdHelper.TheDarkKnightRises, combinedEnum).Result;
@@ -614,7 +614,7 @@ namespace TMDbLibTests
             Assert.AreEqual(53, item.Genres[1].Id);
             Assert.AreEqual("Thriller", item.Genres[1].Name);
 
-            Assert.AreEqual(new DateTime(2013, 02, 14), item.ReleaseDate);
+            Assert.AreEqual(new DateTime(2013, 02, 06), item.ReleaseDate);
             Assert.AreEqual(304654182, item.Revenue);
             Assert.AreEqual(92000000, item.Budget);
             Assert.AreEqual(98, item.Runtime);
@@ -629,7 +629,7 @@ namespace TMDbLibTests
             Movie movie = _config.Client.GetMovie(IdHelper.TheDarkKnightRises, MovieMethods.AccountStates).Result;
             if (movie.AccountStates == null || !movie.AccountStates.Rating.HasValue)
             {
-                _config.Client.MovieSetRating(IdHelper.TheDarkKnightRises, 5);
+                _config.Client.MovieSetRating(IdHelper.TheDarkKnightRises, 5).Wait();
 
                 // Allow TMDb to update cache
                 Thread.Sleep(2000);

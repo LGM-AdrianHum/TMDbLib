@@ -1,11 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using TMDbLib.Utilities;
 
 namespace TMDbLibTests.TestClasses
 {
     enum EnumTestEnum
     {
         A,
-        [Display(Description = "B-Description")]
+        [Name("B-Description")]
         B
     }
 }

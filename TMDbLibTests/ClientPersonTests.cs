@@ -157,7 +157,7 @@ namespace TMDbLibTests
             Assert.AreEqual("Production", job.Department);
             Assert.AreEqual(1571, job.Id);
             Assert.AreEqual("Producer", job.Job);
-            Assert.AreEqual(new DateTime(2007, 6, 21), job.ReleaseDate);
+            Assert.AreEqual(new DateTime(2007, 6, 20), job.ReleaseDate);
             Assert.IsTrue(TestImagesHelpers.TestImagePath(job.PosterPath), "job.PosterPath was not a valid image path, was: " + job.PosterPath);
             Assert.AreEqual("Live Free or Die Hard", job.Title);
             Assert.AreEqual("Live Free or Die Hard", job.OriginalTitle);
