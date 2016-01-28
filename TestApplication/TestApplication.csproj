@@ -49,11 +49,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TMDbLib\TMDbLib.csproj">
-      <Project>{c0006f17-212a-474f-983e-7da2f91e0233}</Project>
+      <Project>{8a1c2b43-ca32-45b5-94a4-e666af02a8ba}</Project>
       <Name>TMDbLib</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -91,7 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TMDbLib\TMDbLib.csproj">
-      <Project>{c0006f17-212a-474f-983e-7da2f91e0233}</Project>
+      <Project>{8A1C2B43-CA32-45B5-94A4-E666AF02A8BA}</Project>
       <Name>TMDbLib</Name>
     </ProjectReference>
   </ItemGroup>
