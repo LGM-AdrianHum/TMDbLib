@@ -1,16 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using TMDbLib.Utilities;
 
 namespace TMDbLib.Objects.Movies
 {
     public enum TvShowListType
     {
-        [Display(Description = "on_the_air")]
+        [Name("on_the_air")]
         OnTheAir,
-        [Display(Description = "airing_today")]
+        [Name("airing_today")]
         AiringToday,
-        [Display(Description = "top_rated")]
+        [Name("top_rated")]
         TopRated,
-        [Display(Description = "popular")]
+        [Name("popular")]
         Popular
     }
 }

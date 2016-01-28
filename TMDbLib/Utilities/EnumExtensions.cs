@@ -1,34 +1,33 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace TMDbLib.Utilities
 {
     public static class EnumExtensions
     {
-        public static string GetDescription<T>(this T enumerationValue) where T : struct
+        public static string GetDescription<T>(this T value) where T : struct
         {
-            Type type = enumerationValue.GetType();
-            if (!type.IsEnum)
-            {
-                throw new ArgumentException("EnumerationValue must be of Enum type", "enumerationValue");
-            }
+            Type type = value.GetType();
+            if (!(value is Enum))
+                throw new ArgumentException("EnumerationValue must be of Enum type", nameof(value));
+            
+            IEnumerable<FieldInfo> aa = type.GetRuntimeFields();
 
-            // Tries to find a DisplayAttribute for a potential friendly name for the enum
-            MemberInfo[] memberInfo = type.GetMember(enumerationValue.ToString());
-            if (memberInfo.Length > 0)
+            NameAttribute displayAttrib = null;
+            foreach (FieldInfo field in aa)
             {
-                object[] attrs = memberInfo[0].GetCustomAttributes(typeof(DisplayAttribute), false);
+                if (!field.GetValue(value).Equals(value))
+                    continue;
 
-                if (attrs.Length > 0)
-                {
-                    //Pull out the description value
-                    return ((DisplayAttribute)attrs[0]).Description;
-                }
+                // Found it
+                displayAttrib = field.GetCustomAttribute<NameAttribute>();
+
+                break;
             }
 
             // If we have no description attribute, just return the ToString of the enum
-            return enumerationValue.ToString();
+            return displayAttrib?.Description ?? value.ToString();
         }
     }
 }

@@ -212,6 +212,7 @@
     <Compile Include="Rest\ParameterType.cs" />
     <Compile Include="Rest\RestRequest.cs" />
     <Compile Include="Rest\RestResponse.cs" />
+    <Compile Include="Utilities\NameAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

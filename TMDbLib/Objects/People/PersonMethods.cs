@@ -1,24 +1,24 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
+using TMDbLib.Utilities;
 
 namespace TMDbLib.Objects.People
 {
     [Flags]
     public enum PersonMethods
     {
-        [Display(Description = "Undefined")]
+        [Name("Undefined")]
         Undefined = 0,
-        [Display(Description = "movie_credits")]
+        [Name("movie_credits")]
         MovieCredits = 1,
-        [Display(Description = "tv_credits")]
+        [Name("tv_credits")]
         TvCredits = 2,
-        [Display(Description = "external_ids")]
+        [Name("external_ids")]
         ExternalIds = 4,
-        [Display(Description = "images")]
+        [Name("images")]
         Images = 8,
-        [Display(Description = "tagged_images")]
+        [Name("tagged_images")]
         TaggedImages = 16,
-        [Display(Description = "changes")]
+        [Name("changes")]
         Changes = 32
     }
 }

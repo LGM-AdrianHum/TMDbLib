@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
+using TMDbLib.Utilities;
 
 namespace TMDbLib.Objects.Discover
 {
@@ -7,33 +7,33 @@ namespace TMDbLib.Objects.Discover
     {
         [Obsolete]
         Undefined,
-        [Display(Description = "popularity.asc")]
+        [Name("popularity.asc")]
         Popularity,
-        [Display(Description = "popularity.desc")]
+        [Name("popularity.desc")]
         PopularityDesc,
-        [Display(Description = "release_date.asc")]
+        [Name("release_date.asc")]
         ReleaseDate,
-        [Display(Description = "release_date.desc")]
+        [Name("release_date.desc")]
         ReleaseDateDesc,
-        [Display(Description = "revenue.asc")]
+        [Name("revenue.asc")]
         Revenue,
-        [Display(Description = "revenue.desc")]
+        [Name("revenue.desc")]
         RevenueDesc,
-        [Display(Description = "primary_release_date.asc")]
+        [Name("primary_release_date.asc")]
         PrimaryReleaseDate,
-        [Display(Description = "primary_release_date.desc")]
+        [Name("primary_release_date.desc")]
         PrimaryReleaseDateDesc,
-        [Display(Description = "original_title.asc")]
+        [Name("original_title.asc")]
         OriginalTitle,
-        [Display(Description = "original_title.desc")]
+        [Name("original_title.desc")]
         OriginalTitleDesc,
-        [Display(Description = "vote_average.asc")]
+        [Name("vote_average.asc")]
         VoteAverage,
-        [Display(Description = "vote_average.desc")]
+        [Name("vote_average.desc")]
         VoteAverageDesc,
-        [Display(Description = "vote_count.asc")]
+        [Name("vote_count.asc")]
         VoteCount,
-        [Display(Description = "vote_count.desc")]
+        [Name("vote_count.desc")]
         VoteCountDesc
     }
 }

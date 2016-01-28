@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
+using TMDbLib.Utilities;
 
 namespace TMDbLib.Objects.Discover
 {
@@ -7,17 +7,17 @@ namespace TMDbLib.Objects.Discover
     {
         [Obsolete]
         Undefined,
-        [Display(Description = "vote_average.asc")]
+        [Name("vote_average.asc")]
         VoteAverage,
-        [Display(Description = "vote_average.desc")]
+        [Name("vote_average.desc")]
         VoteAverageDesc,
-        [Display(Description = "first_air_date.asc")]
+        [Name("first_air_date.asc")]
         FirstAirDate,
-        [Display(Description = "first_air_date.desc")]
+        [Name("first_air_date.desc")]
         FirstAirDateDesc,
-        [Display(Description = "popularity.asc")]
+        [Name("popularity.asc")]
         Popularity,
-        [Display(Description = "popularity.desc")]
+        [Name("popularity.desc")]
         PopularityDesc
     }
 }

@@ -1,18 +1,18 @@
-using System.ComponentModel.DataAnnotations;
+using TMDbLib.Utilities;
 
 namespace TMDbLib.Objects.Find
 {
     public enum FindExternalSource
     {
-        [Display(Description = "imdb_id")]
+        [Name("imdb_id")]
         Imdb,
-        [Display(Description = "freebase_mid")]
+        [Name("freebase_mid")]
         FreeBaseMid,
-        [Display(Description = "freebase_id")]
+        [Name("freebase_id")]
         FreeBaseId,
-        [Display(Description = "tvrage_id")]
+        [Name("tvrage_id")]
         TvRage,
-        [Display(Description = "tvdb_id")]
+        [Name("tvdb_id")]
         TvDb
     }
 }
