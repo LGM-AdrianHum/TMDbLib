@@ -1,11 +1,11 @@
-﻿using System;
+﻿using System.Net;
 
 namespace TMDbLib.Objects.Exceptions
 {
-    public class RequestLimitExceededException : Exception
+    public class RequestLimitExceededException : TmdbHttpException
     {
-        public RequestLimitExceededException()
-            : base("You have exceeded the maximum number of request allowed by TMDb please try again later")
+        public RequestLimitExceededException(HttpStatusCode httpStatusCode, TmdbStatusMessage statusMessage)
+            : base("You have exceeded the maximum number of request allowed by TMDb please try again later", httpStatusCode, statusMessage)
         {
 
         }
