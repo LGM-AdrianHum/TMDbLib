@@ -17,7 +17,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<AccountDetails> AccountGetDetails()
+        public async Task<AccountDetails> AccountGetDetailsAsync()
         {
             RequireSessionId(SessionType.UserSession);
 
@@ -35,7 +35,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<List>> AccountGetLists(int page = 1, string language = null)
+        public async Task<SearchContainer<List>> AccountGetListsAsync(int page = 1, string language = null)
         {
             RequireSessionId(SessionType.UserSession);
 
@@ -66,7 +66,7 @@ namespace TMDbLib.Client
         /// <returns>True if the the movie's favorite status was successfully updated, false if not</returns>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<bool> AccountChangeFavoriteStatus(MediaType mediaType, int mediaId, bool isFavorite)
+        public async Task<bool> AccountChangeFavoriteStatusAsync(MediaType mediaType, int mediaId, bool isFavorite)
         {
             RequireSessionId(SessionType.UserSession);
 
@@ -92,7 +92,7 @@ namespace TMDbLib.Client
         /// <returns>True if the the movie's status on the watchlist was successfully updated, false if not</returns>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<bool> AccountChangeWatchlistStatus(MediaType mediaType, int mediaId, bool isOnWatchlist)
+        public async Task<bool> AccountChangeWatchlistStatusAsync(MediaType mediaType, int mediaId, bool isOnWatchlist)
         {
             RequireSessionId(SessionType.UserSession);
 
@@ -114,7 +114,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchMovie>> AccountGetFavoriteMovies(
+        public async Task<SearchContainer<SearchMovie>> AccountGetFavoriteMoviesAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -128,7 +128,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchTv>> AccountGetFavoriteTv(
+        public async Task<SearchContainer<SearchTv>> AccountGetFavoriteTvAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -142,7 +142,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchMovie>> AccountGetMovieWatchlist(
+        public async Task<SearchContainer<SearchMovie>> AccountGetMovieWatchlistAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -156,7 +156,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchTv>> AccountGetTvWatchlist(
+        public async Task<SearchContainer<SearchTv>> AccountGetTvWatchlistAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -170,7 +170,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchMovie>> AccountGetRatedMovies(
+        public async Task<SearchContainer<SearchMovie>> AccountGetRatedMoviesAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -184,7 +184,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchTv>> AccountGetRatedTvShows(
+        public async Task<SearchContainer<SearchTv>> AccountGetRatedTvShowsAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
@@ -198,7 +198,7 @@ namespace TMDbLib.Client
         /// </summary>
         /// <remarks>Requires a valid user session</remarks>
         /// <exception cref="UserSessionRequiredException">Thrown when the current client object doens't have a user session assigned.</exception>
-        public async Task<SearchContainer<SearchTvEpisode>> AccountGetRatedTvShowEpisodes(
+        public async Task<SearchContainer<SearchTvEpisode>> AccountGetRatedTvShowEpisodesAsync(
             int page = 1,
             AccountSortBy sortBy = AccountSortBy.Undefined,
             SortOrder sortOrder = SortOrder.Undefined,
