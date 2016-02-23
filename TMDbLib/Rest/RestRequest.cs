@@ -207,40 +207,39 @@ namespace TMDbLib.Rest
                 {
                     lastStatusMessage = null;
 
-                    using (HttpRequestMessage req = PrepRequest(method))
-                    using (HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                    HttpRequestMessage req = PrepRequest(method);
+                    HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
+
+                    if (!resp.IsSuccessStatusCode)
                     {
-                        if (!resp.IsSuccessStatusCode)
-                        {
-                            lastStatusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(await resp.Content.ReadAsStringAsync());
-                        }
-
-                        if (resp.StatusCode == (HttpStatusCode)429)
-                        {
-                            // The previous result was a ratelimit, read the Retry-After header and wait the allotted time
-                            TimeSpan? retryAfter = resp.Headers.RetryAfter?.Delta.Value;
-
-                            if (retryAfter.HasValue && retryAfter.Value.TotalSeconds > 0)
-                                await Task.Delay(retryAfter.Value).ConfigureAwait(false);
-                            else
-                                // TMDb sometimes gives us 0-second waits, which can lead to rapid succession of requests
-                                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-
-                            continue;
-                        }
-
-                        if (!resp.IsSuccessStatusCode)
-                        {
-                            // Throw an exception
-                            if (resp.StatusCode == HttpStatusCode.NotFound)
-                                throw new ItemNotFoundException(resp.StatusCode, lastStatusMessage);
-
-                            throw new GenericWebException(resp.StatusCode, lastStatusMessage);
-                        }
-
-                        if (resp.IsSuccessStatusCode)
-                            return resp;
+                        lastStatusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(await resp.Content.ReadAsStringAsync());
                     }
+
+                    if (resp.StatusCode == (HttpStatusCode)429)
+                    {
+                        // The previous result was a ratelimit, read the Retry-After header and wait the allotted time
+                        TimeSpan? retryAfter = resp.Headers.RetryAfter?.Delta.Value;
+
+                        if (retryAfter.HasValue && retryAfter.Value.TotalSeconds > 0)
+                            await Task.Delay(retryAfter.Value).ConfigureAwait(false);
+                        else
+                            // TMDb sometimes gives us 0-second waits, which can lead to rapid succession of requests
+                            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+
+                        continue;
+                    }
+
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        // Throw an exception
+                        if (resp.StatusCode == HttpStatusCode.NotFound)
+                            throw new ItemNotFoundException(resp.StatusCode, lastStatusMessage);
+
+                        throw new GenericWebException(resp.StatusCode, lastStatusMessage);
+                    }
+
+                    if (resp.IsSuccessStatusCode)
+                        return resp;
                 } while (timesToTry-- > 0);
             }
 
