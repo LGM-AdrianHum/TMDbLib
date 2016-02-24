@@ -53,7 +53,7 @@
     <Compile Include="Objects\Exceptions\GenericWebException.cs" />
     <Compile Include="Objects\Exceptions\TmdbException.cs" />
     <Compile Include="Objects\Exceptions\TmdbHttpException.cs" />
-    <Compile Include="Objects\Exceptions\TmdbStatusMessage.cs" />
+    <Compile Include="Objects\General\TmdbStatusMessage.cs" />
     <Compile Include="Utilities\SimpleNamedValueCollection.cs" />
     <Compile Include="Utilities\CustomDatetimeFormatConverter.cs" />
     <Compile Include="Utilities\ObjectHelper.cs" />

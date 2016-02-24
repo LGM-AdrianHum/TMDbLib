@@ -7,6 +7,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using TMDbLib.Objects.Exceptions;
+using TMDbLib.Objects.General;
 
 namespace TMDbLib.Rest
 {
@@ -202,10 +204,17 @@ namespace TMDbLib.Rest
             using (HttpClient httpClient = new HttpClient())
             {
                 HttpResponseMessage resp;
+                TmdbStatusMessage statusMessage = null;
                 do
                 {
                     HttpRequestMessage req = PrepRequest(method);
                     resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
+
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        // Try to get status message
+                        statusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(await resp.Content.ReadAsStringAsync());
+                    }
 
                     if (resp.StatusCode == (HttpStatusCode)429)
                     {
@@ -221,11 +230,18 @@ namespace TMDbLib.Rest
                         continue;
                     }
 
+                    if (!resp.IsSuccessStatusCode && resp.StatusCode != HttpStatusCode.NotFound)
+                    {
+                        // We got a bad response that was NOT 404 - not found.
+                        // We want to let the caller handle 404's
+                        throw new GenericWebException(resp.StatusCode, statusMessage);
+                    }
+
                     return resp;
                 } while (timesToTry-- > 0);
 
                 // We never reached a success
-                return resp;
+                throw new RequestLimitExceededException((HttpStatusCode)429, statusMessage);
             }
         }
     }

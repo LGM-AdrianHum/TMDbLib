@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace TMDbLib.Objects.Exceptions
+namespace TMDbLib.Objects.General
 {
     public class TmdbStatusMessage
     {

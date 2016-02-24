@@ -5,22 +5,25 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TMDbLib.Objects.Exceptions;
+using TMDbLib.Objects.General;
 
 namespace TMDbLib.Rest
 {
     internal class RestResponse
     {
-        protected readonly HttpResponseMessage _response;
+        protected readonly HttpResponseMessage Response;
 
         public TmdbStatusMessage Error { get; }
 
-        public bool IsSuccessfull => _response.IsSuccessStatusCode;
+        public bool IsSuccessfull => Response.IsSuccessStatusCode;
+
+        public bool IsNotFound => Response.StatusCode == HttpStatusCode.NotFound;
 
         public RestResponse(HttpResponseMessage response)
         {
-            _response = response;
+            Response = response;
 
-            if (!_response.IsSuccessStatusCode)
+            if (!Response.IsSuccessStatusCode)
             {
                 Task<string> content = GetContent();
                 Task.WaitAll(content);
@@ -29,16 +32,16 @@ namespace TMDbLib.Rest
             }
         }
 
-        public HttpStatusCode StatusCode => _response.StatusCode;
+        public HttpStatusCode StatusCode => Response.StatusCode;
 
         public string GetHeader(string name, string @default = null)
         {
-            return _response.Headers.GetValues(name).FirstOrDefault() ?? @default;
+            return Response.Headers.GetValues(name).FirstOrDefault() ?? @default;
         }
 
         public async Task<string> GetContent()
         {
-            return await _response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return await Response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 
@@ -51,7 +54,7 @@ namespace TMDbLib.Rest
 
         public async Task<T> GetDataObject()
         {
-            string content = await _response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            string content = await Response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             return JsonConvert.DeserializeObject<T>(content);
         }

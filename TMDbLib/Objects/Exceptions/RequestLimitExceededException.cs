@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using TMDbLib.Objects.General;
 
 namespace TMDbLib.Objects.Exceptions
 {
