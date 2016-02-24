@@ -197,9 +197,8 @@ namespace TMDbLib.Rest
             // DEPRECATED RetryWaitTimeInSeconds        Time to wait between retries
             // DEPRECATED ThrowErrorOnExeedingMaxCalls  Throw an exception if we hit a ratelimit
 
-            int timesToTry = _client.MaxRetryCount + 1;
-
-            Debug.Assert(timesToTry >= 1);
+            int timesToTry = _client.MaxRetryCount;
+            Debug.Assert(timesToTry >= 0);
 
             using (HttpClient httpClient = new HttpClient())
             {
