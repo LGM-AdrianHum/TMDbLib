@@ -144,7 +144,7 @@ namespace TMDbLib.Rest
 
             return new RestResponse(resp);
         }
-
+        
         public async Task<RestResponse<T>> ExecuteGet<T>()
         {
             HttpResponseMessage resp = await SendInternal(HttpMethod.Get).ConfigureAwait(false);

@@ -66,10 +66,9 @@ namespace TMDbLib.Client
 
             RestResponse<Movie> response = await req.ExecuteGet<Movie>().ConfigureAwait(false);
 
-            // No data to patch up so return
-            if (response == null)
+            if (response.IsNotFound)
                 return null;
-
+            
             Movie item = await response.GetDataObject().ConfigureAwait(false);
 
             // Patch up data, so that the end user won't notice that we share objects between req-types.
@@ -90,6 +89,15 @@ namespace TMDbLib.Client
 
             if (item.Translations != null)
                 item.Translations.Id = item.Id;
+
+            if (item.Keywords != null)
+                item.Keywords.Id = item.Id;
+
+            if (item.Videos != null)
+                item.Videos.Id = item.Id;
+
+            if (item.AccountStates != null)
+                item.AccountStates.Id = item.Id;
 
             // Overview is the only field that is HTML encoded from the source.
             item.Overview = WebUtility.HtmlDecode(item.Overview);

@@ -2,6 +2,9 @@
 {
     public static class IdHelper
     {
+        // Generic
+        public const int VeryLargeId = 1500000000;
+
         // Movies
         public const int Avatar = 19995;
         public const int AGoodDayToDieHard = 47964;

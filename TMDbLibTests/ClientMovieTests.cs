@@ -621,6 +621,14 @@ namespace TMDbLibTests
         }
 
         [TestMethod]
+        public void TestMoviesGetMissing()
+        {
+            Movie item = _config.Client.GetMovieAsync(IdHelper.VeryLargeId).Result;
+
+            Assert.IsNull(item);
+        }
+
+        [TestMethod]
         public void TestMoviesExtrasAccountState()
         {
             // Test the custom parsing code for Account State rating
