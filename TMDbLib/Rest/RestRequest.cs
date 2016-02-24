@@ -7,7 +7,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using TMDbLib.Objects.Exceptions;
 
 namespace TMDbLib.Rest
 {
@@ -200,20 +199,13 @@ namespace TMDbLib.Rest
 
             Debug.Assert(timesToTry >= 1);
 
-            TmdbStatusMessage lastStatusMessage;
             using (HttpClient httpClient = new HttpClient())
             {
+                HttpResponseMessage resp;
                 do
                 {
-                    lastStatusMessage = null;
-
                     HttpRequestMessage req = PrepRequest(method);
-                    HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
-
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        lastStatusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(await resp.Content.ReadAsStringAsync());
-                    }
+                    resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
 
                     if (resp.StatusCode == (HttpStatusCode)429)
                     {
@@ -229,22 +221,12 @@ namespace TMDbLib.Rest
                         continue;
                     }
 
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        // Throw an exception
-                        if (resp.StatusCode == HttpStatusCode.NotFound)
-                            throw new ItemNotFoundException(resp.StatusCode, lastStatusMessage);
-
-                        throw new GenericWebException(resp.StatusCode, lastStatusMessage);
-                    }
-
-                    if (resp.IsSuccessStatusCode)
-                        return resp;
+                    return resp;
                 } while (timesToTry-- > 0);
-            }
 
-            // We never reached a success
-            throw new RequestLimitExceededException((HttpStatusCode)429, lastStatusMessage);
+                // We never reached a success
+                return resp;
+            }
         }
     }
 }

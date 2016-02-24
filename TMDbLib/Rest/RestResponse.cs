@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using TMDbLib.Objects.Exceptions;
 
 namespace TMDbLib.Rest
 {
@@ -11,9 +12,21 @@ namespace TMDbLib.Rest
     {
         protected readonly HttpResponseMessage _response;
 
+        public TmdbStatusMessage Error { get; }
+
+        public bool IsSuccessfull => _response.IsSuccessStatusCode;
+
         public RestResponse(HttpResponseMessage response)
         {
             _response = response;
+
+            if (!_response.IsSuccessStatusCode)
+            {
+                Task<string> content = GetContent();
+                Task.WaitAll(content);
+
+                Error = JsonConvert.DeserializeObject<TmdbStatusMessage>(content.Result);
+            }
         }
 
         public HttpStatusCode StatusCode => _response.StatusCode;
@@ -28,7 +41,7 @@ namespace TMDbLib.Rest
             return await _response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
-    
+
     internal class RestResponse<T> : RestResponse
     {
         public RestResponse(HttpResponseMessage response)

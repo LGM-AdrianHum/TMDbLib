@@ -67,7 +67,8 @@ namespace TMDbLib.Client
             RestResponse<Movie> response = await req.ExecuteGet<Movie>().ConfigureAwait(false);
 
             // No data to patch up so return
-            if (response == null) return null;
+            if (response == null)
+                return null;
 
             Movie item = await response.GetDataObject().ConfigureAwait(false);
 
