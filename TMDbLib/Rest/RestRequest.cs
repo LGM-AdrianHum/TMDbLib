@@ -129,8 +129,8 @@ namespace TMDbLib.Rest
 
             return req;
         }
-
-        private void CheckResponse(HttpResponseMessage response)
+        
+        private void CheckResponse(ResponseContainer response)
         {
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 throw new UnauthorizedAccessException("Call to TMDb returned unauthorized. Most likely the provided API key is invalid.");
@@ -138,59 +138,53 @@ namespace TMDbLib.Rest
 
         public async Task<RestResponse> ExecuteGet()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Get).ConfigureAwait(false);
-
-            CheckResponse(resp);
-
-            return new RestResponse(resp);
+            return await Execute(HttpMethod.Get);
         }
-        
+
         public async Task<RestResponse<T>> ExecuteGet<T>()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Get).ConfigureAwait(false);
-
-            CheckResponse(resp);
-
-            return new RestResponse<T>(resp);
+            return await Execute<T>(HttpMethod.Get);
         }
 
         public async Task<RestResponse> ExecutePost()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Post).ConfigureAwait(false);
-
-            CheckResponse(resp);
-
-            return new RestResponse(resp);
+            return await Execute(HttpMethod.Post);
         }
 
         public async Task<RestResponse<T>> ExecutePost<T>()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Post).ConfigureAwait(false);
-
-            CheckResponse(resp);
-
-            return new RestResponse<T>(resp);
+            return await Execute<T>(HttpMethod.Post);
         }
 
         public async Task<RestResponse> ExecuteDelete()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Delete).ConfigureAwait(false);
-
-            CheckResponse(resp);
-
-            return new RestResponse(resp);
+            return await Execute(HttpMethod.Delete);
         }
 
         public async Task<RestResponse<T>> ExecuteDelete<T>()
         {
-            HttpResponseMessage resp = await SendInternal(HttpMethod.Delete).ConfigureAwait(false);
+            return await Execute<T>(HttpMethod.Delete);
+        }
+
+        private async Task<RestResponse> Execute(HttpMethod method)
+        {
+            ResponseContainer resp = await SendInternal(method).ConfigureAwait(false);
 
             CheckResponse(resp);
 
-            return new RestResponse<T>(resp);
+            return new RestResponse(resp.Headers, resp.StatusCode, resp.IsSuccessStatusCode, resp.ResponseContent, resp.ErrorMessage);
         }
 
-        private async Task<HttpResponseMessage> SendInternal(HttpMethod method)
+        private async Task<RestResponse<T>> Execute<T>(HttpMethod method)
+        {
+            ResponseContainer resp = await SendInternal(method).ConfigureAwait(false);
+
+            CheckResponse(resp);
+
+            return new RestResponse<T>(resp.Headers, resp.StatusCode, resp.IsSuccessStatusCode, resp.ResponseContent, resp.ErrorMessage);
+        }
+
+        private async Task<ResponseContainer> SendInternal(HttpMethod method)
         {
             // Account for the following settings:
             // - MaxRetryCount                          Max times to retry
@@ -202,17 +196,33 @@ namespace TMDbLib.Rest
 
             using (HttpClient httpClient = new HttpClient())
             {
-                HttpResponseMessage resp;
-                TmdbStatusMessage statusMessage = null;
+                TmdbStatusMessage statusMessage;
                 do
                 {
+                    statusMessage = null;
+
                     HttpRequestMessage req = PrepRequest(method);
-                    resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
+                    HttpResponseMessage resp;
+                    try
+                    {
+                        resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        throw new TmdbNetworkException(ex.Message, ex);
+                    }
+
+                    if (resp.Content.Headers.ContentType?.MediaType != "application/json")
+                    {
+                        throw new BadResponseTypeException(resp.StatusCode);
+                    }
+
+                    string responseContent = await resp.Content.ReadAsStringAsync();
 
                     if (!resp.IsSuccessStatusCode)
                     {
                         // Try to get status message
-                        statusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(await resp.Content.ReadAsStringAsync());
+                        statusMessage = JsonConvert.DeserializeObject<TmdbStatusMessage>(responseContent);
                     }
 
                     if (resp.StatusCode == (HttpStatusCode)429)
@@ -236,12 +246,32 @@ namespace TMDbLib.Rest
                         throw new GenericWebException(resp.StatusCode, statusMessage);
                     }
 
-                    return resp;
+                    return new ResponseContainer
+                    {
+                        Headers = resp.Headers,
+                        StatusCode = resp.StatusCode,
+                        IsSuccessStatusCode = resp.IsSuccessStatusCode,
+                        ErrorMessage = statusMessage,
+                        ResponseContent = responseContent
+                    };
                 } while (timesToTry-- > 0);
 
                 // We never reached a success
                 throw new RequestLimitExceededException((HttpStatusCode)429, statusMessage);
             }
+        }
+
+        private class ResponseContainer
+        {
+            public bool IsSuccessStatusCode { get; set; }
+
+            public HttpStatusCode StatusCode { get; set; }
+
+            public TmdbStatusMessage ErrorMessage { get; set; }
+
+            public string ResponseContent { get; set; }
+
+            public HttpResponseHeaders Headers { get; set; }
         }
     }
 }

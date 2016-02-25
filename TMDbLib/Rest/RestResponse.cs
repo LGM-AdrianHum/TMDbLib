@@ -1,62 +1,57 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using TMDbLib.Objects.Exceptions;
 using TMDbLib.Objects.General;
 
 namespace TMDbLib.Rest
 {
     internal class RestResponse
     {
-        protected readonly HttpResponseMessage Response;
+        private readonly HttpResponseHeaders _headers;
+        private readonly string _responseContent;
 
-        public TmdbStatusMessage Error { get; }
+        public bool IsNotFound => StatusCode == HttpStatusCode.NotFound;
 
-        public bool IsSuccessfull => Response.IsSuccessStatusCode;
+        public HttpStatusCode StatusCode { get; }
 
-        public bool IsNotFound => Response.StatusCode == HttpStatusCode.NotFound;
+        public bool IsSuccessStatusCode { get; set; }
 
-        public RestResponse(HttpResponseMessage response)
+        public TmdbStatusMessage ErrorMessage { get; set; }
+
+        internal RestResponse(HttpResponseHeaders headers, HttpStatusCode statusCode, bool isSuccessStatusCode, string responseContent, TmdbStatusMessage errorMessage)
         {
-            Response = response;
+            _headers = headers;
+            _responseContent = responseContent;
 
-            if (!Response.IsSuccessStatusCode)
-            {
-                Task<string> content = GetContent();
-                Task.WaitAll(content);
-
-                Error = JsonConvert.DeserializeObject<TmdbStatusMessage>(content.Result);
-            }
+            StatusCode = statusCode;
+            IsSuccessStatusCode = isSuccessStatusCode;
+            ErrorMessage = errorMessage;
         }
-
-        public HttpStatusCode StatusCode => Response.StatusCode;
 
         public string GetHeader(string name, string @default = null)
         {
-            return Response.Headers.GetValues(name).FirstOrDefault() ?? @default;
+            return _headers.GetValues(name).FirstOrDefault() ?? @default;
         }
 
         public async Task<string> GetContent()
         {
-            return await Response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return _responseContent;
         }
     }
 
     internal class RestResponse<T> : RestResponse
     {
-        public RestResponse(HttpResponseMessage response)
-            : base(response)
+        internal RestResponse(HttpResponseHeaders headers, HttpStatusCode statusCode, bool isSuccessStatusCode, string responseContent, TmdbStatusMessage errorMessage)
+            : base(headers, statusCode, isSuccessStatusCode, responseContent, errorMessage)
         {
         }
 
         public async Task<T> GetDataObject()
         {
-            string content = await Response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            return JsonConvert.DeserializeObject<T>(content);
+            return JsonConvert.DeserializeObject<T>(await GetContent());
         }
 
         public static implicit operator T(RestResponse<T> response)

@@ -49,6 +49,8 @@
     <Compile Include="Helpers\TmdbNullBoolAsFalse.cs" />
     <Compile Include="Helpers\TmdbNullIntAsZero.cs" />
     <Compile Include="Helpers\TmdbUtcTimeConverter.cs" />
+    <Compile Include="Objects\Exceptions\BadResponseTypeException.cs" />
+    <Compile Include="Objects\Exceptions\TmdbNetworkException.cs" />
     <Compile Include="Objects\Search\SearchTvSeason.cs" />
     <Compile Include="Objects\Exceptions\GenericWebException.cs" />
     <Compile Include="Objects\Exceptions\TmdbException.cs" />
