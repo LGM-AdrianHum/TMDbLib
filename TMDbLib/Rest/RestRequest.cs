@@ -42,14 +42,7 @@ namespace TMDbLib.Rest
         {
             AppendQueryString(sb, value.Key, value.Value);
         }
-
-        public RestRequest AddParameter(KeyValuePair<string, string> pair, ParameterType type = ParameterType.QueryString)
-        {
-            AddParameter(pair.Key, pair.Value, type);
-
-            return this;
-        }
-
+        
         public RestRequest AddParameter(string key, string value, ParameterType type = ParameterType.QueryString)
         {
             switch (type)
@@ -217,7 +210,7 @@ namespace TMDbLib.Rest
                         throw new BadResponseTypeException(resp.StatusCode);
                     }
 
-                    string responseContent = await resp.Content.ReadAsStringAsync();
+                    string responseContent = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                     if (!resp.IsSuccessStatusCode)
                     {
