@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMDbLib", "TMDbLib\TMDbLib.csproj", "{C0006F17-212A-474F-983E-7DA2F91E0233}"
 EndProject
@@ -15,6 +15,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{545A7C
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{144956A6-43F7-4FA9-98F1-4054D1E0981A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMDbChangeDetector", "TMDbChangeDetector\TMDbChangeDetector.csproj", "{470B35D5-A578-4244-9718-C6AB693F27D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,8 +38,16 @@ Global
 		{00AB08ED-9484-4AAE-9C8C-D19E40325E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00AB08ED-9484-4AAE-9C8C-D19E40325E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00AB08ED-9484-4AAE-9C8C-D19E40325E16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{470B35D5-A578-4244-9718-C6AB693F27D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{470B35D5-A578-4244-9718-C6AB693F27D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{470B35D5-A578-4244-9718-C6AB693F27D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{470B35D5-A578-4244-9718-C6AB693F27D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E2324DA0-C17D-42B1-BABF-7699E40DFEFE} = {144956A6-43F7-4FA9-98F1-4054D1E0981A}
+		{470B35D5-A578-4244-9718-C6AB693F27D0} = {144956A6-43F7-4FA9-98F1-4054D1E0981A}
 	EndGlobalSection
 EndGlobal
