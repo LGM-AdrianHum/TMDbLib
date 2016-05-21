@@ -7,6 +7,11 @@ namespace TMDbChangeDetector
 {
     class RequestDescriptor
     {
+        public RequestDescriptor(string category, string path, Type tmdbLibType)
+            : this(category, path, HttpMethod.Get, null, tmdbLibType)
+        {
+        }
+
         public RequestDescriptor(string category, string path, IEnumerable<KeyValuePair<string, string>> postObject = null, Type tmdbLibType = null)
             : this(category, path, HttpMethod.Get, postObject, tmdbLibType)
         {

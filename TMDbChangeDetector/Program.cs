@@ -10,11 +10,19 @@ using TMDbLib.Objects.Changes;
 using TMDbLib.Objects.Collections;
 using TMDbLib.Objects.Companies;
 using TMDbLib.Objects.Credit;
+using TMDbLib.Objects.Find;
 using TMDbLib.Objects.General;
 using TMDbLib.Objects.Genres;
 using TMDbLib.Objects.Jobs;
 using TMDbLib.Objects.Lists;
+using TMDbLib.Objects.Movies;
+using TMDbLib.Objects.People;
+using TMDbLib.Objects.Reviews;
 using TMDbLib.Objects.Search;
+using TMDbLib.Objects.Timezones;
+using TMDbLib.Objects.TvShows;
+using TMDbLib.Utilities;
+using Credits = TMDbLib.Objects.Movies.Credits;
 
 namespace TMDbChangeDetector
 {
@@ -39,9 +47,14 @@ namespace TMDbChangeDetector
         private const int IdGenreAction = 28;
         private const int IdKeywordRogue = 186447;
         private const string IdTheDarkKnightRisesReviewId = "5010553819c2952d1b000451";
+        private const string ImdbBreakingBadId = "tt0903747";
+        private const string TestListId = "528349d419c2954bd21ca0a8";
+        private const int IdBreakingBadSeason1 = 3572;
+        private const int IdBreakingBadSeason1Episode1 = 62085;
 
         public const string ApiKey = "c6b31d1cdad6a56a23f0c913e2482a31";
         private const string SessionId = "c413282cdadad9af972c06d9b13096a8b13ab1c1";
+        private const string GuestTestSessionId = "d425468da2781d6799ba14c05f7327e7";
         private const string AccountId = "6089455";
 
         public static readonly Uri BaseUri = new Uri("https://api.themoviedb.org/3/");
@@ -199,7 +212,7 @@ namespace TMDbChangeDetector
         static IEnumerable<RequestDescriptor> SetupMethods()
         {
             // Configuration
-            yield return new RequestDescriptor("Configuration", "/configuration", tmdbLibType: typeof(TMDbConfig));
+            yield return new RequestDescriptor("Configuration", "/configuration", typeof(TMDbConfig));
 
             // Account
             yield return new RequestDescriptor("Account", "/account", new[] { Helpers.Create("session_id", SessionId) }, typeof(AccountDetails));
@@ -221,147 +234,148 @@ namespace TMDbChangeDetector
             // /authentication/guest_session/new
 
             // Certifications
-            yield return new RequestDescriptor("Certifications", "/certification/movie/list", tmdbLibType: typeof(CertificationsContainer));
-            yield return new RequestDescriptor("Certifications", "/certification/tv/list", tmdbLibType: typeof(CertificationsContainer));
+            yield return new RequestDescriptor("Certifications", "/certification/movie/list", typeof(CertificationsContainer));
+            yield return new RequestDescriptor("Certifications", "/certification/tv/list", typeof(CertificationsContainer));
 
             // Changes
-            yield return new RequestDescriptor("Changes", "/movie/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
-            yield return new RequestDescriptor("Changes", "/person/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
-            yield return new RequestDescriptor("Changes", "/tv/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
+            yield return new RequestDescriptor("Changes", "/movie/changes", typeof(SearchContainer<ChangesListItem>));
+            yield return new RequestDescriptor("Changes", "/person/changes", typeof(SearchContainer<ChangesListItem>));
+            yield return new RequestDescriptor("Changes", "/tv/changes", typeof(SearchContainer<ChangesListItem>));
 
             // Collections
-            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}", tmdbLibType: typeof(Collection));
-            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}/images", tmdbLibType: typeof(ImagesWithId));
+            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}", typeof(Collection));
+            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}/images", typeof(ImagesWithId));
 
             // Companies
-            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}", tmdbLibType: typeof(Company));
-            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}/movies", tmdbLibType: typeof(SearchContainerWithId<MovieResult>));
+            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}", typeof(Company));
+            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}/movies", typeof(SearchContainerWithId<MovieResult>));
 
             // Credits
-            yield return new RequestDescriptor("Credits", $"/credit/{IdBruceWillisMiamiVice}", tmdbLibType: typeof(Credit));
+            yield return new RequestDescriptor("Credits", $"/credit/{IdBruceWillisMiamiVice}", typeof(Credit));
 
             // Discover
-            yield return new RequestDescriptor("Discover", "/discover/movie", tmdbLibType: typeof(SearchContainer<SearchMovie>));
-            yield return new RequestDescriptor("Discover", "/discover/tv", tmdbLibType: typeof(SearchContainer<SearchTv>));
+            yield return new RequestDescriptor("Discover", "/discover/movie", typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Discover", "/discover/tv", typeof(SearchContainer<SearchTv>));
 
             // Find
-            // /find/id
+            yield return new RequestDescriptor("Find", $"/find/{ImdbBreakingBadId}", new[] { Helpers.Create("external_source", FindExternalSource.Imdb.GetDescription()) }, typeof(FindContainer));
 
             // Genres
-            yield return new RequestDescriptor("Genres", "/genre/movie/list", tmdbLibType: typeof(GenreContainer));
-            yield return new RequestDescriptor("Genres", "/genre/tv/list", tmdbLibType: typeof(GenreContainer));
-            yield return new RequestDescriptor("Genres", $"/genre/{IdGenreAction}/movies", tmdbLibType: typeof(SearchContainerWithId<MovieResult>));
+            yield return new RequestDescriptor("Genres", "/genre/movie/list", typeof(GenreContainer));
+            yield return new RequestDescriptor("Genres", "/genre/tv/list", typeof(GenreContainer));
+            yield return new RequestDescriptor("Genres", $"/genre/{IdGenreAction}/movies", typeof(SearchContainerWithId<MovieResult>));
 
             // Guest Sessions
-            // /guest_session/guest_session_id/rated/movies
-            // /guest_session/guest_session_id/rated/tv
-            // /guest_session/guest_session_id/rated/tv/episodes
+            yield return new RequestDescriptor("Guest Sessions", $"/guest_session/{GuestTestSessionId}/rated/movies", typeof(SearchContainer<MovieWithRating>));
+            yield return new RequestDescriptor("Guest Sessions", $"/guest_session/{GuestTestSessionId}/rated/tv", typeof(SearchContainer<TvShowWithRating>));
+            yield return new RequestDescriptor("Guest Sessions", $"/guest_session/{GuestTestSessionId}/rated/tv/episodes", typeof(SearchContainer<TvEpisodeWithRating>));
 
             // Jobs
-            yield return new RequestDescriptor("Jobs", "/job/list", tmdbLibType: typeof(JobContainer));
+            yield return new RequestDescriptor("Jobs", "/job/list", typeof(JobContainer));
 
             // Keywords
-            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}", tmdbLibType: typeof(Keyword));
-            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}/movies", tmdbLibType: typeof(SearchContainer<MovieResult>));
+            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}", typeof(Keyword));
+            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}/movies", typeof(SearchContainer<MovieResult>));
 
             // Lists
-            // /list/id
-            // /list/id/item_status
-            // /list
-            // /list/id/add_item
-            // /list/id/remove_item
-            // /list/id/clear
+            yield return new RequestDescriptor("Lists", $"/list/{TestListId}", typeof(List));
+            yield return new RequestDescriptor("Lists", $"/list/{TestListId}/item_status", new[] { Helpers.Create("movie_id", IdAvatar.ToString()) }, typeof(ListStatus));
+
+            // TODO: /list
+            // TODO: /list/id/add_item
+            // TODO: /list/id/remove_item
+            // TODO: /list/id/clear
 
             // Movies
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}");
-            // TODO: yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/account_states");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/alternative_titles");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/credits");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/images");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/keywords");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/release_dates");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/videos");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/translations");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/similar");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/reviews");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/lists");
-            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/changes");
-            // TODO: yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/rating");
-            yield return new RequestDescriptor("Movies", "/movie/latest");
-            yield return new RequestDescriptor("Movies", "/movie/now_playing");
-            yield return new RequestDescriptor("Movies", "/movie/popular");
-            yield return new RequestDescriptor("Movies", "/movie/top_rated");
-            yield return new RequestDescriptor("Movies", "/movie/upcoming");
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}", typeof(Movie));
+            TODO: yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/account_states", new[] { Helpers.Create("session_id", SessionId) }, typeof(AccountState));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/alternative_titles", typeof(AlternativeTitles));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/credits", typeof(Credits));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/images", typeof(Images));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/keywords", typeof(KeywordsContainer));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/release_dates", typeof(Releases));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/videos", typeof(ResultContainer<Video>));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/translations", typeof(TranslationsContainer));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/similar", typeof(SearchContainer<MovieResult>));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/reviews", typeof(SearchContainer<Review>));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/lists", typeof(SearchContainer<ListResult>));
+            yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/changes", typeof(ChangesContainer));
+            // TODO: yield return new RequestDescriptor("Movies", $"/movie/{IdAvatar}/rating", tmdbLibType: typeof(object));
+            yield return new RequestDescriptor("Movies", "/movie/latest", typeof(Movie));
+            yield return new RequestDescriptor("Movies", "/movie/now_playing", typeof(SearchContainer<MovieResult>));
+            yield return new RequestDescriptor("Movies", "/movie/popular", typeof(SearchContainer<MovieResult>));
+            yield return new RequestDescriptor("Movies", "/movie/top_rated", typeof(SearchContainer<MovieResult>));
+            yield return new RequestDescriptor("Movies", "/movie/upcoming", typeof(SearchContainer<MovieResult>));
 
             // Networks
-            yield return new RequestDescriptor("Networks", $"/network/{IdTwentiethCenturyFox}");
+            yield return new RequestDescriptor("Networks", $"/network/{IdTwentiethCenturyFox}", typeof(Network));
 
             // People
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/movie_credits");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/tv_credits");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/combined_credits");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/external_ids");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/images");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/tagged_images");
-            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/changes");
-            yield return new RequestDescriptor("People", "/person/popular");
-            yield return new RequestDescriptor("People", "/person/latest");
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}", typeof(Person));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/movie_credits", typeof(MovieCredits));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/tv_credits", typeof(TvCredits));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/combined_credits", typeof(object));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/external_ids", typeof(ExternalIds));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/images", typeof(ProfileImages));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/tagged_images", typeof(SearchContainer<TaggedImage>));
+            yield return new RequestDescriptor("People", $"/person/{IdBruceWillis}/changes", typeof(ChangesContainer));
+            yield return new RequestDescriptor("People", "/person/popular", typeof(SearchContainer<PersonResult>));
+            yield return new RequestDescriptor("People", "/person/latest", typeof(Person));
 
             // Reviews
-            yield return new RequestDescriptor("Reviews", $"/review/{IdTheDarkKnightRisesReviewId}");
+            yield return new RequestDescriptor("Reviews", $"/review/{IdTheDarkKnightRisesReviewId}", typeof(Review));
 
             // Search
-            yield return new RequestDescriptor("Search", "/search/company", new[] { Helpers.Create("query", "hbo") });
-            yield return new RequestDescriptor("Search", "/search/collection", new[] { Helpers.Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/keyword", new[] { Helpers.Create("query", "tower") });
-            yield return new RequestDescriptor("Search", "/search/list", new[] { Helpers.Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/movie", new[] { Helpers.Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/multi", new[] { Helpers.Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/person", new[] { Helpers.Create("query", "bruce") });
-            yield return new RequestDescriptor("Search", "/search/tv", new[] { Helpers.Create("query", "house") });
+            yield return new RequestDescriptor("Search", "/search/company", new[] { Helpers.Create("query", "hbo") }, typeof(SearchContainer<SearchCompany>));
+            yield return new RequestDescriptor("Search", "/search/collection", new[] { Helpers.Create("query", "james") }, typeof(SearchContainer<SearchResultCollection>));
+            yield return new RequestDescriptor("Search", "/search/keyword", new[] { Helpers.Create("query", "tower") }, typeof(SearchContainer<SearchKeyword>));
+            yield return new RequestDescriptor("Search", "/search/list", new[] { Helpers.Create("query", "james") }, typeof(SearchContainer<SearchList>));
+            yield return new RequestDescriptor("Search", "/search/movie", new[] { Helpers.Create("query", "james") }, typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Search", "/search/multi", new[] { Helpers.Create("query", "james") }, typeof(SearchContainer<SearchMulti>));
+            yield return new RequestDescriptor("Search", "/search/person", new[] { Helpers.Create("query", "bruce") }, typeof(SearchContainer<SearchPerson>));
+            yield return new RequestDescriptor("Search", "/search/tv", new[] { Helpers.Create("query", "house") }, typeof(SearchContainer<SearchTv>));
 
             // Timezones
-            yield return new RequestDescriptor("Timezones", "/timezones/list");
+            yield return new RequestDescriptor("Timezones", "/timezones/list", typeof(Timezones));
 
             // TV
-            // /tv/id
-            // /tv/id/account_states
-            // /tv/id/alternative_titles
-            // /tv/id/changes
-            // /tv/id/content_ratings
-            // /tv/id/credits
-            // /tv/id/external_ids
-            // /tv/id/images
-            // /tv/id/keywords
-            // /tv/id/rating
-            // /tv/id/similar
-            // /tv/id/translations
-            // /tv/id/videos
-            // /tv/latest
-            // /tv/on_the_air
-            // /tv/airing_today
-            // /tv/top_rated
-            // /tv/popular
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}", typeof(TvShow));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/account_states", new[] { Helpers.Create("session_id", SessionId) }, typeof(AccountState));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/alternative_titles", typeof(ResultContainer<AlternativeTitle>));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/changes", typeof(ChangesContainer));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/content_ratings", typeof(ResultContainer<ContentRating>));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/credits", typeof(Credits));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/external_ids", typeof(ExternalIds));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/images", typeof(ImagesWithId));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/keywords", typeof(ResultContainer<Keyword>));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/rating", typeof(ResultContainer<ContentRating>));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/similar", typeof(SearchContainer<SearchTv>));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/translations", typeof(TranslationsContainer));
+            yield return new RequestDescriptor("TV", $"/tv/{IdBreakingBad}/videos", typeof(ResultContainer<Video>));
+            yield return new RequestDescriptor("TV", "/tv/latest", typeof(TvShow));
+            yield return new RequestDescriptor("TV", "/tv/on_the_air", typeof(SearchContainer<TvShow>));
+            yield return new RequestDescriptor("TV", "/tv/airing_today", typeof(SearchContainer<TvShow>));
+            yield return new RequestDescriptor("TV", "/tv/top_rated", typeof(SearchContainer<TvShow>));
+            yield return new RequestDescriptor("TV", "/tv/popular", typeof(SearchContainer<TvShow>));
 
             // TV Seasons
-            // /tv/id/season/season_number
-            // /tv/season/id/changes
-            // /tv/id/season/season_number/account_states
-            // /tv/id/season/season_number/credits
-            // /tv/id/season/season_number/external_ids
-            // /tv/id/season/season_number/images
-            // /tv/id/season/season_number/videos
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1", typeof(TvSeason));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/season/{IdBreakingBadSeason1}/changes", typeof(ChangesContainer));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1/account_states", new[] { Helpers.Create("session_id", SessionId) }, typeof(ResultContainer<TvEpisodeAccountState>));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1/credits", typeof(Credits));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1/external_ids", typeof(ExternalIds));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1/images", typeof(PosterImages));
+            yield return new RequestDescriptor("TV Seasons", $"/tv/{IdBreakingBad}/season/1/videos", typeof(ResultContainer<Video>));
 
             // TV Episodes
-            // /tv/id/season/season_number/episode/episode_number
-            // /tv/episode/id/changes
-            // /tv/id/season/season_number/episode/episode_number/account_states
-            // /tv/id/season/season_number/episode/episode_number/credits
-            // /tv/id/season/season_number/episode/episode_number/external_ids
-            // /tv/id/season/season_number/episode/episode_number/images
-            // /tv/id/season/season_number/episode/episode_number/rating
-            // /tv/id/season/season_number/episode/episode_number/videos
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1", typeof(TvEpisode));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/episode/{IdBreakingBadSeason1Episode1}/changes", typeof(ChangesContainer));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/account_states", new[] { Helpers.Create("session_id", SessionId) }, typeof(TvEpisodeAccountState));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/credits", typeof(Credits));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/external_ids", typeof(ExternalIds));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/images", typeof(StillImages));
+            // TODO: yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/rating", typeof(TvShow));
+            yield return new RequestDescriptor("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/videos", typeof(ResultContainer<Video>));
         }
     }
 }
