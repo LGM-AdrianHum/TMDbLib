@@ -7,17 +7,30 @@ namespace TMDbChangeDetector
 {
     class RequestDescriptor
     {
-        public RequestDescriptor(string category, string path, Type tmdbLibType)
-            : this(category, path, HttpMethod.Get, null, tmdbLibType)
+        public string Category { get; set; }
+
+        public string Path { get; set; }
+
+        public HttpMethod Method { get; set; }
+
+        public NameValueCollection PostObject { get; set; }
+
+        public Type TmdbLibType { get; set; }
+
+        protected RequestDescriptor()
+        {
+
+        }
+    }
+
+    class RequestDescriptor<T> : RequestDescriptor
+    {
+        public RequestDescriptor(string category, string path, IEnumerable<KeyValuePair<string, string>> postObject = null)
+            : this(category, path, HttpMethod.Get, postObject)
         {
         }
 
-        public RequestDescriptor(string category, string path, IEnumerable<KeyValuePair<string, string>> postObject = null, Type tmdbLibType = null)
-            : this(category, path, HttpMethod.Get, postObject, tmdbLibType)
-        {
-        }
-
-        public RequestDescriptor(string category, string path, HttpMethod method, IEnumerable<KeyValuePair<string, string>> postObject = null, Type tmdbLibType = null)
+        public RequestDescriptor(string category, string path, HttpMethod method, IEnumerable<KeyValuePair<string, string>> postObject = null)
         {
             Path = path;
             Method = method;
@@ -28,17 +41,7 @@ namespace TMDbChangeDetector
                     PostObject.Add(pair.Key, pair.Value);
 
             Category = category;
-            TmdbLibType = tmdbLibType;
+            TmdbLibType = typeof(T);
         }
-
-        public string Category { get; set; }
-
-        public string Path { get; set; }
-
-        public HttpMethod Method { get; set; }
-
-        public NameValueCollection PostObject { get; set; }
-
-        public Type TmdbLibType { get; set; }
     }
 }
