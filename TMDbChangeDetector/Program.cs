@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Permissions;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using TMDbLib.Objects.Account;
+using TMDbLib.Objects.Certifications;
+using TMDbLib.Objects.Changes;
+using TMDbLib.Objects.Collections;
+using TMDbLib.Objects.Companies;
+using TMDbLib.Objects.Credit;
+using TMDbLib.Objects.General;
+using TMDbLib.Objects.Genres;
+using TMDbLib.Objects.Jobs;
+using TMDbLib.Objects.Lists;
+using TMDbLib.Objects.Search;
 
 namespace TMDbChangeDetector
 {
@@ -36,12 +40,11 @@ namespace TMDbChangeDetector
         private const int IdKeywordRogue = 186447;
         private const string IdTheDarkKnightRisesReviewId = "5010553819c2952d1b000451";
 
-        private const string ApiKey = "c6b31d1cdad6a56a23f0c913e2482a31";
+        public const string ApiKey = "c6b31d1cdad6a56a23f0c913e2482a31";
         private const string SessionId = "c413282cdadad9af972c06d9b13096a8b13ab1c1";
         private const string AccountId = "6089455";
-        private const string ResponsesDirectory = "Responses";
 
-        private static Uri BaseUri = new Uri("https://api.themoviedb.org/3/");
+        public static readonly Uri BaseUri = new Uri("https://api.themoviedb.org/3/");
 
         static void Main(string[] args)
         {
@@ -52,21 +55,31 @@ namespace TMDbChangeDetector
                 ProcessDescriptor(descriptor);
 
                 Console.WriteLine();
+                //Console.ReadLine();
             }
         }
 
         static void ProcessDescriptor(RequestDescriptor descriptor)
         {
-            Console.WriteLine($"Processing {descriptor.Method} {descriptor.Path}");
+            Console.Write("Processing ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"{descriptor.Method} {descriptor.Path} ");
+            Console.ResetColor();
 
-            // Load previous
-            JToken previous = Load(descriptor.Category, descriptor.Path);
+            if (descriptor.TmdbLibType != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"(Type: {Helpers.PrettyPrintType(descriptor.TmdbLibType)})");
+                Console.ResetColor();
+            }
+
+            Console.WriteLine();
 
             // Get current
-            JToken current;
+            string current;
             try
             {
-                current = GetCurrent(descriptor);
+                current = Helpers.GetJson(descriptor);
             }
             catch (Exception ex)
             {
@@ -76,175 +89,129 @@ namespace TMDbChangeDetector
                 return;
             }
 
-            // Get differences to current
-            TmdbDifferences diff = CalculateDiff(descriptor, previous, current);
-
-            if (diff.IsSame)
+            if (descriptor.TmdbLibType == null)
             {
-                Console.WriteLine("No differences");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("MISSING TYPE. Can't compare");
+
+                Console.WriteLine("JSON response:");
+                Console.WriteLine(JToken.Parse(current).ToString(Formatting.Indented));
+
+                Console.WriteLine();
+
+                Console.ResetColor();
             }
             else
             {
-                Console.WriteLine($"DIFFERENT. New: {diff.KeysNew.Count:N0}, Removed: {diff.KeysOld.Count:N0}, Same: {diff.KeysSame.Count:N0}");
-                Console.WriteLine();
+                // Get differences to current
+                TmdbDifferences diff = CalculateDiff(descriptor, current);
 
-                Console.WriteLine("New");
-                Display(diff, diff.KeysNew);
-                Console.WriteLine();
+                if (diff.IsSame)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("No differences");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"DIFFERENT. Missing: {diff.NewFields.Count:N0}, Excess: {diff.MissingFields.Count:N0}");
+                    Console.WriteLine();
 
-                Console.WriteLine("Removed");
-                Display(diff, diff.KeysOld);
-                Console.WriteLine();
+                    if (diff.NewFields.Any())
+                    {
+                        Console.WriteLine("New fields (present in JSON)");
+                        foreach (var key in diff.NewFields)
+                            Console.WriteLine($"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
 
-                Console.WriteLine("Same");
-                Display(diff, diff.KeysSame);
-                Console.WriteLine();
+                        Console.WriteLine();
+                    }
+
+                    if (diff.MissingFields.Any())
+                    {
+                        Console.WriteLine("Missing fields (present in C#)");
+                        foreach (var key in diff.MissingFields)
+                            Console.WriteLine($"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
+
+                        Console.WriteLine();
+                    }
+                }
             }
-
-            // Store result
-            Save(descriptor.Category, descriptor.Path, current);
         }
 
-        static void Display(TmdbDifferences diff, IEnumerable<string> keys)
-        {
-            Func<string, JsonProperty> get = key => diff.OldProperties.ContainsKey(key) ? diff.OldProperties[key] : diff.NewProperties[key];
-
-            foreach (string key in keys)
-            {
-                JsonProperty prop = get(key);
-
-                Console.WriteLine($" {key} ({prop.Type})");
-            }
-        }
-
-        static JToken GetCurrent(RequestDescriptor descriptor)
-        {
-            // Fetch current
-            HttpResponseMessage response = IssueRequest(descriptor);
-
-            CheckResponse(response);
-
-            byte[] bytes = response.Content.ReadAsByteArrayAsync().Result;
-            string json = Encoding.UTF8.GetString(bytes);
-
-            return JsonConvert.DeserializeObject<JToken>(json);
-        }
-
-        static TmdbDifferences CalculateDiff(RequestDescriptor descriptor, JToken prev, JToken curr)
+        static TmdbDifferences CalculateDiff(RequestDescriptor descriptor, string current)
         {
             TmdbDifferences result = new TmdbDifferences();
             result.Request = descriptor;
 
-            // Compare
-            result.OldProperties = IterateProperties(prev).ToDictionary(s => s.Path);
-            result.NewProperties = IterateProperties(curr).ToDictionary(s => s.Path);
+            // Deserialize
+            JsonSerializerSettings settings = new JsonSerializerSettings();
+            settings.ContractResolver = new ContractResolver();
+            settings.MissingMemberHandling = MissingMemberHandling.Error;
 
-            result.KeysOld = new HashSet<string>(result.OldProperties.Keys);
-            result.KeysOld.ExceptWith(result.NewProperties.Keys);
+            List<ErrorEventArgs> errors = new List<ErrorEventArgs>();
+            settings.Error += (sender, args) =>
+            {
+                errors.Add(args);
+                args.ErrorContext.Handled = true;
+            };
 
-            result.KeysSame = new HashSet<string>(result.OldProperties.Keys);
-            result.KeysSame.IntersectWith(result.NewProperties.Keys);
+            try
+            {
+                JsonConvert.DeserializeObject(current, descriptor.TmdbLibType, settings);
+            }
+            catch (JsonSerializationException)
+            {
+            }
 
-            result.KeysNew = new HashSet<string>(result.NewProperties.Keys);
-            result.KeysNew.ExceptWith(result.OldProperties.Keys);
+            // Parse errors
+            foreach (ErrorEventArgs error in errors)
+            {
+                // Required property 'items' not found in JSON. Path 'results[0]', line 1, position 199.
+                // Could not find member 'rating' on object of type 'SearchMovie'. Path 'results[0].rating', line 1, position 541
+
+                var key = error.ErrorContext.Path + "/" + error.ErrorContext.Member;
+                var errorMessage = error.ErrorContext.Error.Message;
+
+                key = Helpers.NormalizeErrorKey(key);
+
+                if (errorMessage.StartsWith("Required property"))
+                {
+                    // Field in C# is missing in JSON
+                    if (!result.MissingFields.ContainsKey(key))
+                        result.MissingFields.Add(key, error);
+                }
+                else if (errorMessage.StartsWith("Could not find member"))
+                {
+                    // Field in JSON is missing in C#
+                    if (!result.NewFields.ContainsKey(key))
+                        result.NewFields.Add(key, error);
+                }
+                else
+                {
+                    throw new Exception("Unknown error type");
+                }
+            }
 
             return result;
-        }
-
-        static void CheckResponse(HttpResponseMessage response)
-        {
-            if (!response.IsSuccessStatusCode)
-                throw new Exception($"Bad response on {response.RequestMessage.RequestUri}: {response.StatusCode}");
-
-            StreamContent content = response.Content as StreamContent;
-            if (content == null)
-                throw new Exception($"Missing content for {response.RequestMessage.RequestUri}");
-
-            if (content.Headers.ContentType.MediaType != "application/json")
-                throw new Exception($"Content for {response.RequestMessage.RequestUri} had bad type, got: {content.Headers.ContentType.MediaType}");
-        }
-
-        static HttpResponseMessage IssueRequest(RequestDescriptor descriptor)
-        {
-            // Add ApiKey
-            descriptor.PostObject["api_key"] = ApiKey;
-
-            // Prep request
-            Uri uri = new Uri(BaseUri, descriptor.Path.TrimStart('/'));
-            string body = null;
-
-            if (descriptor.Method == HttpMethod.Get)
-            {
-                // Put object in uri
-                List<string> pairs = new List<string>();
-                foreach (string key in descriptor.PostObject)
-                {
-                    string value = descriptor.PostObject[key];
-
-                    pairs.Add(key + "=" + WebUtility.UrlEncode(value));
-                }
-
-                uri = new Uri(uri, "?" + string.Join("&", pairs));
-            }
-            else if (descriptor.Method == HttpMethod.Post)
-            {
-                JObject obj = new JObject();
-                foreach (string key in descriptor.PostObject)
-                {
-                    string value = descriptor.PostObject[key];
-
-                    obj[key] = value;
-                }
-
-                body = JsonConvert.SerializeObject(obj);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Cannot use HTTP method: {descriptor.Method}");
-            }
-
-            HttpRequestMessage req = new HttpRequestMessage(descriptor.Method, uri);
-            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            if (body != null)
-                req.Content = new StringContent(body);
-
-            HttpResponseMessage resp;
-            using (HttpClient client = new HttpClient())
-            {
-                Task<HttpResponseMessage> tsk = client.SendAsync(req);
-
-                try
-                {
-                    tsk.Wait();
-                }
-                catch (AggregateException ex)
-                {
-                    throw ex.InnerException;
-                }
-
-                resp = tsk.Result;
-            }
-
-            return resp;
         }
 
         static IEnumerable<RequestDescriptor> SetupMethods()
         {
             // Configuration
-            yield return new RequestDescriptor("Configuration", "/configuration");
+            yield return new RequestDescriptor("Configuration", "/configuration", tmdbLibType: typeof(TMDbConfig));
 
             // Account
-            yield return new RequestDescriptor("Account", "/account", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/lists", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/favorite/movies", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/favorite/tv", new[] { Create("session_id", SessionId) });
+            yield return new RequestDescriptor("Account", "/account", new[] { Helpers.Create("session_id", SessionId) }, typeof(AccountDetails));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/lists", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<List>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/favorite/movies", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/favorite/tv", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchTv>));
             // TODO: POST yield return new RequestDescriptor("Account", $"/account/{AccountId}/favorite", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/movies", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/tv", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/tv/episodes", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/watchlist/movies", new[] { Create("session_id", SessionId) });
-            yield return new RequestDescriptor("Account", $"/account/{AccountId}/watchlist/tv", new[] { Create("session_id", SessionId) });
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/movies", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/tv", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchTv>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/rated/tv/episodes", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchTvEpisode>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/watchlist/movies", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Account", $"/account/{AccountId}/watchlist/tv", new[] { Helpers.Create("session_id", SessionId) }, typeof(SearchContainer<SearchTv>));
             // TODO: POST  yield return new RequestDescriptor("Account", $"/account/{AccountId}/watchlist", new[] { Create("session_id", SessionId) });
 
             // Authentication
@@ -254,36 +221,36 @@ namespace TMDbChangeDetector
             // /authentication/guest_session/new
 
             // Certifications
-            yield return new RequestDescriptor("Certifications", "/certification/movie/list");
-            yield return new RequestDescriptor("Certifications", "/certification/tv/list");
+            yield return new RequestDescriptor("Certifications", "/certification/movie/list", tmdbLibType: typeof(CertificationsContainer));
+            yield return new RequestDescriptor("Certifications", "/certification/tv/list", tmdbLibType: typeof(CertificationsContainer));
 
             // Changes
-            yield return new RequestDescriptor("Changes", "/movie/changes");
-            yield return new RequestDescriptor("Changes", "/person/changes");
-            yield return new RequestDescriptor("Changes", "/tv/changes");
+            yield return new RequestDescriptor("Changes", "/movie/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
+            yield return new RequestDescriptor("Changes", "/person/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
+            yield return new RequestDescriptor("Changes", "/tv/changes", tmdbLibType: typeof(SearchContainer<ChangesListItem>));
 
             // Collections
-            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}");
-            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}/images");
+            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}", tmdbLibType: typeof(Collection));
+            yield return new RequestDescriptor("Collections", $"/collection/{IdJamesBondCollection}/images", tmdbLibType: typeof(ImagesWithId));
 
             // Companies
-            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}");
-            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}/movies");
+            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}", tmdbLibType: typeof(Company));
+            yield return new RequestDescriptor("Companies", $"/company/{IdTwentiethCenturyFox}/movies", tmdbLibType: typeof(SearchContainerWithId<MovieResult>));
 
             // Credits
-            yield return new RequestDescriptor("Credits", $"/credit/{IdBruceWillisMiamiVice}");
+            yield return new RequestDescriptor("Credits", $"/credit/{IdBruceWillisMiamiVice}", tmdbLibType: typeof(Credit));
 
             // Discover
-            yield return new RequestDescriptor("Discover", "/discover/movie");
-            yield return new RequestDescriptor("Discover", "/discover/tv");
+            yield return new RequestDescriptor("Discover", "/discover/movie", tmdbLibType: typeof(SearchContainer<SearchMovie>));
+            yield return new RequestDescriptor("Discover", "/discover/tv", tmdbLibType: typeof(SearchContainer<SearchTv>));
 
             // Find
             // /find/id
 
             // Genres
-            yield return new RequestDescriptor("Genres", "/genre/movie/list");
-            yield return new RequestDescriptor("Genres", "/genre/tv/list");
-            yield return new RequestDescriptor("Genres", $"/genre/{IdGenreAction}/movies");
+            yield return new RequestDescriptor("Genres", "/genre/movie/list", tmdbLibType: typeof(GenreContainer));
+            yield return new RequestDescriptor("Genres", "/genre/tv/list", tmdbLibType: typeof(GenreContainer));
+            yield return new RequestDescriptor("Genres", $"/genre/{IdGenreAction}/movies", tmdbLibType: typeof(SearchContainerWithId<MovieResult>));
 
             // Guest Sessions
             // /guest_session/guest_session_id/rated/movies
@@ -291,11 +258,11 @@ namespace TMDbChangeDetector
             // /guest_session/guest_session_id/rated/tv/episodes
 
             // Jobs
-            yield return new RequestDescriptor("Jobs", "/job/list");
+            yield return new RequestDescriptor("Jobs", "/job/list", tmdbLibType: typeof(JobContainer));
 
             // Keywords
-            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}");
-            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}/movies");
+            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}", tmdbLibType: typeof(Keyword));
+            yield return new RequestDescriptor("Keywords", $"/keyword/{IdKeywordRogue}/movies", tmdbLibType: typeof(SearchContainer<MovieResult>));
 
             // Lists
             // /list/id
@@ -345,14 +312,14 @@ namespace TMDbChangeDetector
             yield return new RequestDescriptor("Reviews", $"/review/{IdTheDarkKnightRisesReviewId}");
 
             // Search
-            yield return new RequestDescriptor("Search", "/search/company", new[] { Create("query", "hbo") });
-            yield return new RequestDescriptor("Search", "/search/collection", new[] { Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/keyword", new[] { Create("query", "tower") });
-            yield return new RequestDescriptor("Search", "/search/list", new[] { Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/movie", new[] { Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/multi", new[] { Create("query", "james") });
-            yield return new RequestDescriptor("Search", "/search/person", new[] { Create("query", "bruce") });
-            yield return new RequestDescriptor("Search", "/search/tv", new[] { Create("query", "house") });
+            yield return new RequestDescriptor("Search", "/search/company", new[] { Helpers.Create("query", "hbo") });
+            yield return new RequestDescriptor("Search", "/search/collection", new[] { Helpers.Create("query", "james") });
+            yield return new RequestDescriptor("Search", "/search/keyword", new[] { Helpers.Create("query", "tower") });
+            yield return new RequestDescriptor("Search", "/search/list", new[] { Helpers.Create("query", "james") });
+            yield return new RequestDescriptor("Search", "/search/movie", new[] { Helpers.Create("query", "james") });
+            yield return new RequestDescriptor("Search", "/search/multi", new[] { Helpers.Create("query", "james") });
+            yield return new RequestDescriptor("Search", "/search/person", new[] { Helpers.Create("query", "bruce") });
+            yield return new RequestDescriptor("Search", "/search/tv", new[] { Helpers.Create("query", "house") });
 
             // Timezones
             yield return new RequestDescriptor("Timezones", "/timezones/list");
@@ -395,128 +362,6 @@ namespace TMDbChangeDetector
             // /tv/id/season/season_number/episode/episode_number/images
             // /tv/id/season/season_number/episode/episode_number/rating
             // /tv/id/season/season_number/episode/episode_number/videos
-        }
-
-        private static IEnumerable<JsonProperty> IterateProperties(JToken obj)
-        {
-            return IterateProperties(null, obj);
-        }
-
-        static IEnumerable<JsonProperty> IterateProperties(string currentPath, JToken val)
-        {
-            if (val.Type == JTokenType.Array)
-            {
-                string path = currentPath;
-                //if (!string.IsNullOrEmpty(currentPath))
-                //    path += ".";
-
-                path += "[array]";
-
-                JArray arr = (JArray)val;
-
-                // Iterate all childobjects, unique the resulting properties
-                HashSet<string> childKeys = new HashSet<string>();
-                List<JsonProperty> childs = new List<JsonProperty>();
-
-                foreach (JObject token in ((JArray)arr).OfType<JObject>())
-                {
-                    foreach (JsonProperty childProp in IterateProperties(path, token))
-                    {
-                        if (childKeys.Add(childProp.Path))
-                            childs.Add(childProp);
-                    }
-                }
-
-                foreach (JsonProperty jsonProperty in childs)
-                    yield return jsonProperty;
-            }
-            else if (val.Type == JTokenType.Object)
-            {
-                JObject obj = (JObject)val;
-                foreach (JProperty property in obj.Properties())
-                {
-                    string name = property.Name;
-                    JToken value = property.Value;
-
-                    string path = currentPath;
-                    if (!string.IsNullOrEmpty(currentPath))
-                        path += ".";
-
-                    path += name;
-
-                    yield return new JsonProperty(path, name, value.Type, value);
-
-                    foreach (JsonProperty jsonProperty in IterateProperties(path, value))
-                    {
-                        yield return jsonProperty;
-                    }
-                }
-            }
-        }
-
-        static JToken Load(string category, string requestPath)
-        {
-            string filePath = Path.Combine(ResponsesDirectory, category + requestPath.Replace("/", "_") + ".json");
-
-            if (File.Exists(filePath))
-                return JsonConvert.DeserializeObject<JToken>(File.ReadAllText(filePath));
-
-            return new JObject();
-        }
-
-        static void Save(string category, string requestPath, JToken obj)
-        {
-            if (!Directory.Exists(ResponsesDirectory))
-                Directory.CreateDirectory(ResponsesDirectory);
-
-            string filePath = Path.Combine(ResponsesDirectory, category + requestPath.Replace("/", "_") + ".json");
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(obj));
-        }
-
-        static KeyValuePair<string, string> Create(string key, string value)
-        {
-            return new KeyValuePair<string, string>(key, value);
-        }
-    }
-
-    class TmdbDifferences
-    {
-        public RequestDescriptor Request { get; set; }
-
-        public Dictionary<string, JsonProperty> OldProperties { get; set; }
-
-        public Dictionary<string, JsonProperty> NewProperties { get; set; }
-
-        public HashSet<string> KeysOld { get; set; }
-
-        public HashSet<string> KeysSame { get; set; }
-
-        public HashSet<string> KeysNew { get; set; }
-
-        public bool IsSame => !KeysOld.Any() && !KeysNew.Any();
-    }
-
-    class JsonProperty
-    {
-        public JsonProperty(string path, string name, JTokenType type, object value)
-        {
-            Path = path;
-            Name = name;
-            Type = type;
-            Value = value;
-        }
-
-        public string Path { get; set; }
-
-        public string Name { get; set; }
-
-        public JTokenType Type { get; set; }
-
-        public object Value { get; set; }
-
-        public override string ToString()
-        {
-            return $"{Path} ({Type})";
         }
     }
 }

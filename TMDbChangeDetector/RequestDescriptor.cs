@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net.Http;
 
@@ -6,12 +7,12 @@ namespace TMDbChangeDetector
 {
     class RequestDescriptor
     {
-        public RequestDescriptor(string category, string path, IEnumerable<KeyValuePair<string, string>> postObject = null)
-            : this(category, path, HttpMethod.Get, postObject)
+        public RequestDescriptor(string category, string path, IEnumerable<KeyValuePair<string, string>> postObject = null, Type tmdbLibType = null)
+            : this(category, path, HttpMethod.Get, postObject, tmdbLibType)
         {
         }
 
-        public RequestDescriptor(string category, string path, HttpMethod method, IEnumerable<KeyValuePair<string, string>> postObject = null)
+        public RequestDescriptor(string category, string path, HttpMethod method, IEnumerable<KeyValuePair<string, string>> postObject = null, Type tmdbLibType = null)
         {
             Path = path;
             Method = method;
@@ -20,8 +21,9 @@ namespace TMDbChangeDetector
             if (postObject != null)
                 foreach (KeyValuePair<string, string> pair in postObject)
                     PostObject.Add(pair.Key, pair.Value);
-            
+
             Category = category;
+            TmdbLibType = tmdbLibType;
         }
 
         public string Category { get; set; }
@@ -31,5 +33,7 @@ namespace TMDbChangeDetector
         public HttpMethod Method { get; set; }
 
         public NameValueCollection PostObject { get; set; }
+
+        public Type TmdbLibType { get; set; }
     }
 }
