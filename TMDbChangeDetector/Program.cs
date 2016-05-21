@@ -28,10 +28,11 @@ namespace TMDbChangeDetector
 {
     /*
         This tool is meant as a means of finding out if new fields have been added to any TMDb object.
+        It is for internal use only, and is not meant to be used by any end user.
 
-        It works by querying methods and comparing the objects returned with objects stored on disk from previous runs.
-        If fields are added or removed, it will be reported.
-
+        It works by querying methods on TMDb and deserializing them into their respective objects.
+        Any errors in doing so (missing fields on either side) will result in a report
+        
         Methods are taken from docs:
             http://docs.themoviedb.apiary.io/
     */
