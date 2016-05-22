@@ -2,11 +2,12 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TMDbLib.Objects.Certifications;
+using TMDbLibTests.JsonHelpers;
 
 namespace TMDbLibTests
 {
     [TestClass]
-    public class ClientCertificationsTests
+    public class ClientCertificationsTests : TestBase
     {
         private TestConfig _config;
 
@@ -14,7 +15,7 @@ namespace TMDbLibTests
         /// Run once, on every test
         /// </summary>
         [TestInitialize]
-        public void Initiator()
+        public override void Initiator()
         {
             _config = new TestConfig();
         }

@@ -2,11 +2,12 @@
 using TMDbLib.Objects.Reviews;
 using TMDbLib.Objects.General;
 using TMDbLibTests.Helpers;
+using TMDbLibTests.JsonHelpers;
 
 namespace TMDbLibTests
 {
     [TestClass]
-    public class ClientReviewTests
+    public class ClientReviewTests : TestBase
     {
         private TestConfig _config;
 
@@ -14,7 +15,7 @@ namespace TMDbLibTests
         /// Run once, on every test
         /// </summary>
         [TestInitialize]
-        public void Initiator()
+        public override void Initiator()
         {
             _config = new TestConfig();
         }
