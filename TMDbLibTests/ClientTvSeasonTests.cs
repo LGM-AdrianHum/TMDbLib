@@ -138,7 +138,7 @@ namespace TMDbLibTests
             Assert.AreEqual("/m/05yy27m", externalIds.FreebaseMid);
             Assert.IsNull(externalIds.ImdbId);
             Assert.IsNull(externalIds.TvrageId);
-            Assert.AreEqual(30272, externalIds.TvdbId);
+            Assert.AreEqual("30272", externalIds.TvdbId);
         }
 
         [TestMethod]
