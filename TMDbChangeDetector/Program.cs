@@ -68,26 +68,22 @@ namespace TMDbChangeDetector
             {
                 ProcessDescriptor(descriptor);
 
-                Console.WriteLine();
+                WriteLine();
                 Console.ReadLine();
             }
         }
 
         static void ProcessDescriptor(RequestDescriptor descriptor)
         {
-            Console.Write("Processing ");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write($"{descriptor.Method} {descriptor.Path} ");
-            Console.ResetColor();
+            Write("Processing ");
+            Write(ConsoleColor.Cyan, $"{descriptor.Method} {descriptor.Path} ");
 
             if (descriptor.TmdbLibType != null)
             {
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"(Type: {Helpers.PrettyPrintType(descriptor.TmdbLibType)})");
-                Console.ResetColor();
+                Write(ConsoleColor.Magenta, $"(Type: {Helpers.PrettyPrintType(descriptor.TmdbLibType)})");
             }
 
-            Console.WriteLine();
+            WriteLine();
 
             // Get current
             string current;
@@ -97,21 +93,18 @@ namespace TMDbChangeDetector
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"EXCEPTION: {ex.Message}");
-                Console.ResetColor();
+                WriteLine(ConsoleColor.Red, $"EXCEPTION: {ex.Message}");
                 return;
             }
 
             if (descriptor.TmdbLibType == null)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("MISSING TYPE. Can't compare");
+                WriteLine(ConsoleColor.Yellow, "MISSING TYPE. Can't compare");
 
-                Console.WriteLine("JSON response:");
-                Console.WriteLine(JToken.Parse(current).ToString(Formatting.Indented));
+                WriteLine(ConsoleColor.Yellow, "JSON response:");
+                WriteLine(ConsoleColor.Yellow, JToken.Parse(current).ToString(Formatting.Indented));
 
-                Console.WriteLine();
+                WriteLine();
 
                 Console.ResetColor();
             }
@@ -122,32 +115,29 @@ namespace TMDbChangeDetector
 
                 if (diff.IsSame)
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("No differences");
-                    Console.ResetColor();
+                    WriteLine(ConsoleColor.Green, "No differences");
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"DIFFERENT. Missing: {diff.NewFields.Count:N0}, Excess: {diff.MissingFields.Count:N0}");
-                    Console.WriteLine();
+                    WriteLine(ConsoleColor.Yellow, $"DIFFERENT. Missing: {diff.NewFields.Count:N0}, Excess: {diff.MissingFields.Count:N0}");
+                    WriteLine();
 
                     if (diff.NewFields.Any())
                     {
-                        Console.WriteLine("New fields (present in JSON)");
+                        WriteLine(ConsoleColor.Yellow, "New fields (present in JSON)");
                         foreach (var key in diff.NewFields)
-                            Console.WriteLine($"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
+                            WriteLine(ConsoleColor.Yellow, $"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
 
-                        Console.WriteLine();
+                        WriteLine();
                     }
 
                     if (diff.MissingFields.Any())
                     {
-                        Console.WriteLine("Missing fields (present in C#)");
+                        WriteLine(ConsoleColor.Yellow, "Missing fields (present in C#)");
                         foreach (var key in diff.MissingFields)
-                            Console.WriteLine($"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
+                            WriteLine(ConsoleColor.Yellow, $"  {key.Key} - {key.Value.ErrorContext.Error.Message}");
 
-                        Console.WriteLine();
+                        WriteLine();
                     }
                 }
             }
@@ -377,6 +367,35 @@ namespace TMDbChangeDetector
             yield return new RequestDescriptor<StillImages>("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/images");
             // TODO: yield return new RequestDescriptor<TvShow>("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/rating");
             yield return new RequestDescriptor<ResultContainer<Video>>("TV Episodes", $"/tv/{IdBreakingBad}/season/1/episode/1/videos");
+        }
+
+        static void Write(string line)
+        {
+            Console.Write(line);
+        }
+
+        static void Write(ConsoleColor color, string line)
+        {
+            Console.ForegroundColor = color;
+            Console.Write(line);
+            Console.ResetColor();
+        }
+
+        static void WriteLine()
+        {
+            Console.WriteLine();
+        }
+
+        static void WriteLine(string line)
+        {
+            Console.WriteLine(line);
+        }
+
+        static void WriteLine(ConsoleColor color, string line)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(line);
+            Console.ResetColor();
         }
     }
 }
