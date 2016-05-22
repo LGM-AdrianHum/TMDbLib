@@ -18,6 +18,8 @@ namespace TMDbLibTests
         [TestInitialize]
         public override void Initiator()
         {
+            base.Initiator();
+
             _config = new TestConfig();
         }
 
