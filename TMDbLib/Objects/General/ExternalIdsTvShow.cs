@@ -9,5 +9,14 @@ namespace TMDbLib.Objects.General
 
         [JsonProperty("tvdb_id")]
         public string TvdbId { get; set; }
+
+        [JsonProperty("facebook_id")]
+        public string FacebookId { get; set; }
+
+        [JsonProperty("twitter_id")]
+        public string TwitterId { get; set; }
+
+        [JsonProperty("instagram_id")]
+        public string InstagramId { get; set; }
     }
 }

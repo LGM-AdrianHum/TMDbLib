@@ -9,10 +9,11 @@ using RestClient = TMDbLib.Rest.RestClient;
 using RestRequest = TMDbLib.Rest.RestRequest;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace TMDbLib.Client
 {
-    public partial class TMDbClient
+    public partial class TMDbClient : IDisposable
     {
         private const string ApiVersion = "3";
         private const string ProductionUrl = "api.themoviedb.org";
@@ -33,7 +34,6 @@ namespace TMDbLib.Client
             _serializer.Converters.Add(new SearchBaseConverter());
             _serializer.Converters.Add(new TaggedImageConverter());
             _serializer.Converters.Add(new TolerantEnumConverter());
-            
 
             //Setup proxy to use during requests
             //Proxy is optional. If passed, will be used in every request.
@@ -74,26 +74,22 @@ namespace TMDbLib.Client
         public bool HasConfig { get; private set; }
 
         /// <summary>
+        /// Throw exceptions when TMDbs API returns certain errors, such as Not Found.
+        /// </summary>
+        public bool ThrowApiExceptions
+        {
+            get => _client.ThrowApiExceptions;
+            set => _client.ThrowApiExceptions = value;
+        }
+
+        /// <summary>
         /// The maximum number of times a call to TMDb will be retried
         /// </summary>
         /// <remarks>Default is 0</remarks>
         public int MaxRetryCount
         {
-            get { return _client.MaxRetryCount; }
-            set { _client.MaxRetryCount = value; }
-        }
-
-        /// <summary>
-        /// The base number of seconds that will be waited between retry attempts.
-        /// Each retry will take progressively longer to give the service a chance to recover from what ever the problem is.
-        /// Formula: RetryAttempt * RetryWaitTimeInSeconds, this is the amount of time in seconds the application will wait before retrying
-        /// </summary>
-        /// <remarks>Default is 10</remarks>
-        [Obsolete("Setting this has no effect, as TMDb informs us of how long to wait")]
-        public int RetryWaitTimeInSeconds
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
+            get => _client.MaxRetryCount;
+            set => _client.MaxRetryCount = value;
         }
 
         /// <summary>
@@ -109,25 +105,12 @@ namespace TMDbLib.Client
         public SessionType SessionType { get; private set; }
 
         /// <summary>
-        /// The TMDb only allows x amount of requests over a specific time span.
-        /// If you exceed this limit your request will be denied untill the timer resets.
-        /// By default the client will keep waiting for the time to expire and then try again.
-        /// For details about the allowed limits: https://www.themoviedb.org/talk/5317af69c3a3685c4a0003b1?page=1
-        /// </summary>
-        [Obsolete("Setting this is identical to setting 'MaxRetryCount = 0'")]
-        public bool ThrowErrorOnExeedingMaxCalls
-        {
-            get { return MaxRetryCount == 0; }
-            set { MaxRetryCount = value ? 0 : 5; }
-        }
-
-        /// <summary>
         /// Gets or sets the Web Proxy to use during requests to TMDb API.
         /// </summary>
         /// <remarks>
         /// The Web Proxy is optional. If set, every request will be sent through it.
         /// Use the constructor for setting it.
-        /// 
+        ///
         /// For convenience, this library also offers a <see cref="IWebProxy"/> implementation.
         /// Check <see cref="Utilities.TMDbAPIProxy"/> for more information.
         /// </remarks>
@@ -165,9 +148,9 @@ namespace TMDbLib.Client
             throw new UserSessionRequiredException();
         }
 
-        public void GetConfig()
+        public async Task<TMDbConfig> GetConfigAsync()
         {
-            TMDbConfig config = _client.Create("configuration").ExecuteGet<TMDbConfig>(CancellationToken.None).Result;
+            TMDbConfig config = await _client.Create("configuration").ExecuteGet<TMDbConfig>(CancellationToken.None);
 
             if (config == null)
                 throw new Exception("Unable to retrieve configuration");
@@ -175,6 +158,8 @@ namespace TMDbLib.Client
             // Store config
             Config = config;
             HasConfig = true;
+
+            return config;
         }
 
         public Uri GetImageUrl(string size, string filePath, bool useSsl = false)
@@ -268,6 +253,11 @@ namespace TMDbLib.Client
                     throw;
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _client?.Dispose();
         }
     }
 }

@@ -100,8 +100,8 @@ namespace TMDbLib.Client
 
             RestResponse<Movie> response = await req.ExecuteGet<Movie>(cancellationToken).ConfigureAwait(false);
 
-            // No data to patch up so return
-            if (response == null) return null;
+            if (!response.IsValid)
+                return null;
 
             Movie item = await response.GetDataObject().ConfigureAwait(false);
 
@@ -127,6 +127,9 @@ namespace TMDbLib.Client
             if (item.AccountStates != null)
                 item.AccountStates.Id = item.Id;
 
+            if (item.ExternalIds != null)
+                item.ExternalIds.Id = item.Id;
+
             // Overview is the only field that is HTML encoded from the source.
             item.Overview = WebUtility.HtmlDecode(item.Overview);
 
@@ -144,14 +147,24 @@ namespace TMDbLib.Client
             return await GetMovieMethod<Credits>(movieId, MovieMethods.Credits, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<ImagesWithId> GetMovieImagesAsync(int movieId, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Returns an object that contains all known exteral id's for the movie related to the specified TMDB id.
+        /// </summary>
+        /// <param name="id">The TMDb id of the target movie.</param>
+        /// <param name="cancellationToken">A cancellation token</param>
+        public async Task<ExternalIdsMovie> GetMovieExternalIdsAsync(int id, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await GetMovieImagesAsync(movieId, DefaultLanguage, cancellationToken).ConfigureAwait(false);
+            return await GetMovieMethod<ExternalIdsMovie>(id, MovieMethods.ExternalIds, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<ImagesWithId> GetMovieImagesAsync(int movieId, string language, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ImagesWithId> GetMovieImagesAsync(int movieId, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await GetMovieMethod<ImagesWithId>(movieId, MovieMethods.Images, language: language, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await GetMovieImagesAsync(movieId, DefaultLanguage, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<ImagesWithId> GetMovieImagesAsync(int movieId, string language, string includeImageLanguage = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await GetMovieMethod<ImagesWithId>(movieId, MovieMethods.Images, language: language, includeImageLanguage: includeImageLanguage, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<KeywordsContainer> GetMovieKeywordsAsync(int movieId, CancellationToken cancellationToken = default(CancellationToken))
@@ -159,7 +172,7 @@ namespace TMDbLib.Client
             return await GetMovieMethod<KeywordsContainer>(movieId, MovieMethods.Keywords, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<Movie> GetMovieLatestAsync( CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<Movie> GetMovieLatestAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             RestRequest req = _client.Create("movie/latest");
             RestResponse<Movie> resp = await req.ExecuteGet<Movie>(cancellationToken).ConfigureAwait(false);
@@ -195,7 +208,7 @@ namespace TMDbLib.Client
 
         private async Task<T> GetMovieMethod<T>(int movieId, MovieMethods movieMethod, string dateFormat = null,
             string country = null,
-            string language = null, int page = 0, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default(CancellationToken)) where T : new()
+            string language = null, string includeImageLanguage = null, int page = 0, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default(CancellationToken)) where T : new()
         {
             RestRequest req = _client.Create("movie/{movieId}/{method}");
             req.AddUrlSegment("movieId", movieId.ToString(CultureInfo.InvariantCulture));
@@ -206,6 +219,9 @@ namespace TMDbLib.Client
             language = language ?? DefaultLanguage;
             if (!string.IsNullOrWhiteSpace(language))
                 req.AddParameter("language", language);
+
+            if (!string.IsNullOrWhiteSpace(includeImageLanguage))
+                req.AddParameter("include_image_language", includeImageLanguage);
 
             if (page >= 1)
                 req.AddParameter("page", page.ToString());
@@ -370,4 +386,3 @@ namespace TMDbLib.Client
         }
     }
 }
-

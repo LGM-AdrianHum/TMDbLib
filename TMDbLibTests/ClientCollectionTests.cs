@@ -42,6 +42,14 @@ namespace TMDbLibTests
         }
 
         [Fact]
+        public void TestCollectionMissing()
+        {
+            Collection collection = Config.Client.GetCollectionAsync(IdHelper.MissingID).Result;
+
+            Assert.Null(collection);
+        }
+
+        [Fact]
         public void TestCollectionsParts()
         {
             // We will intentionally ignore errors reg. missing JSON as we do not request it
@@ -84,7 +92,7 @@ namespace TMDbLibTests
         public void TestCollectionsImages()
         {
             // Get config
-            Config.Client.GetConfig();
+            Config.Client.GetConfigAsync().Sync();
 
             // Test image url generator
             ImagesWithId images = Config.Client.GetCollectionImagesAsync(IdHelper.JamesBondCollection).Result;
